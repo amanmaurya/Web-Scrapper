@@ -1,6 +1,6 @@
 const puppeteer = require('puppeteer');
 // const CREDS = require('./creds');
-const mongoose = require('mongoose');
+// const mongoose = require('mongoose');
 const User = require('./models/user');
 
 const CREDS = {

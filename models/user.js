@@ -1,12 +1,12 @@
 
-const mongoose = require('mongoose');
+// // const mongoose = require('mongoose');
 
-let userSchema = new mongoose.Schema({
-    username: String,
-    email: String,
-    dateCrawled: Date
-});
+// let userSchema = new mongoose.Schema({
+//     username: String,
+//     email: String,
+//     dateCrawled: Date
+// });
 
-let User = mongoose.model('User', userSchema);
+// let User = mongoose.model('User', userSchema);
 
-module.exports = User;
+// module.exports = User;
