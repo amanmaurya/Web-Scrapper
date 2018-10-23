@@ -1,11 +1,17 @@
 const puppeteer = require('puppeteer');
-const CREDS = require('./creds');
+// const CREDS = require('./creds');
 const mongoose = require('mongoose');
 const User = require('./models/user');
 
+const CREDS = {
+    username:'amanmaurya2010@gmail.com',
+    password:'kumaraman@9'
+}
+
 async function run() {
   const browser = await puppeteer.launch({
-    headless: false
+    headless: false,
+     slowMo: 25 // slow down by 250ms
   });
 
   const page = await browser.newPage();
@@ -27,15 +33,15 @@ async function run() {
   await page.keyboard.type(CREDS.password);
 
   await page.click(BUTTON_SELECTOR);
-  await page.waitForNavigation();
+  // await page.waitForNavigation();
 
-  const userToSearch = 'john';
+  const userToSearch = 'aman';
   const searchUrl = `https://github.com/search?q=${userToSearch}&type=Users&utf8=%E2%9C%93`;
   // let searchUrl = 'https://github.com/search?utf8=%E2%9C%93&q=bashua&type=Users';
 
   await page.goto(searchUrl);
   await page.waitFor(2 * 1000);
-
+ 
     // const LIST_USERNAME_SELECTOR = '#user_search_results > div.user-list > div:nth-child(1) > div.d-flex > div > a';
   const LIST_USERNAME_SELECTOR = '#user_search_results > div.user-list > div:nth-child(INDEX) > div.d-flex > div > a';
     // const LIST_EMAIL_SELECTOR = '#user_search_results > div.user-list > div:nth-child(1) > div.d-flex > div > ul > li:nth-child(2) > a';
@@ -44,6 +50,7 @@ async function run() {
   const numPages = await getNumPages(page);
 
   console.log('Numpages: ', numPages);
+  var page1 = await browser.newPage();
 
   for (let h = 1; h <= numPages; h++) {
     let pageUrl = searchUrl + '&p=' + h;
@@ -72,12 +79,16 @@ async function run() {
         continue;
 
       console.log(username, ' -> ', email);
+        // const userToSearch = 'john';
+        var uurl = `https://github.com/${username}`;
+        await page1.goto(uurl);
+        await page1.waitFor(2 * 1000);
 
-      upsertUser({
-        username: username,
-        email: email,
-        dateCrawled: new Date()
-      });
+      // upsertUser({
+      //   username: username,
+      //   email: email,
+      //   dateCrawled: new Date()
+      // });
     }
   }
 
