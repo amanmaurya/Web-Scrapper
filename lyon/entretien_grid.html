@@ -1,0 +1,69 @@
+<!DOCTYPE html><html>
+<head>
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+<meta charset="utf-8">
+<title>Grid for Lyon</title>
+<style>
+#map {
+height: 100%;
+}
+html, body {
+height: 100%;
+margin: 0;
+padding: 0;
+}
+.title, .details { text-align: center;  }
+</style>
+</head>
+<body>
+<h1 class="title">Grid for Lyon about "Entretien"</h1>
+<p class="details">Created <span id="length"></span> circles of <span id="radius"></span> meter radius</p>
+<div id="map"></div>
+<script>
+function initMap(locationMap) {
+var map = new google.maps.Map(document.getElementById("map"), {
+zoom: 10,
+center: {lat: 45.764043, lng: 4.835659},
+mapTypeId: "roadmap"
+});
+for (var location in locationMap.grid) {
+var latLng = locationMap.grid[location].split(", ");
+var lat = latLng[0];
+var lng = latLng[1];
+var cityCircle = new google.maps.Circle({
+strokeColor: "#FF0000",
+strokeOpacity: 0.8,
+strokeWeight: 2,
+fillColor: "#FF0000",
+fillOpacity: 0.35,
+map: map,
+center: {lat: parseFloat(lat), lng: parseFloat(lng)},
+radius: parseInt(locationMap.radius)
+});
+}
+document.getElementById("length").textContent = locationMap.grid.length;
+document.getElementById("radius").textContent = locationMap.radius;
+}
+function getMapData() {
+function loadJSON(callback) {
+var fileToLoad = "entretien_grid.json";
+var xobj = new XMLHttpRequest();
+xobj.overrideMimeType("application/json");
+xobj.open("GET", fileToLoad, true);
+xobj.onreadystatechange = function() {
+if (xobj.readyState == 4 && xobj.status == "200") {
+callback(xobj.responseText);
+}
+}
+xobj.send(null);
+}
+loadJSON(function(response) {
+initMap( JSON.parse(response) )
+});
+}
+</script>
+<script async defer 
+src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAm94YUiTPXG-qpTz5WXGqolWHxMTRambU&callback=getMapData">
+</script>
+</body>
+</html>

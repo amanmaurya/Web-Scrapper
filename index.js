@@ -2,134 +2,161 @@ const puppeteer = require('puppeteer');
 // const CREDS = require('./creds');
 // const mongoose = require('mongoose');
 const User = require('./models/user');
+const cheerio = require('cheerio')
+const fs = require('fs');
+
+let rawdata = fs.readFileSync('./lyon/entretien_places.json');
+let places = JSON.parse(rawdata);
 
 const CREDS = {
-    username:'amanmaurya2010@gmail.com',
-    password:'kumaraman@9'
+    username: 'amanmaurya2010@gmail.com',
+    password: 'kumaraman@9'
 }
 
+// console.log(places)
 async function run() {
-  const browser = await puppeteer.launch({
-    headless: false,
-     slowMo: 25 // slow down by 250ms
-  });
+    const browser = await puppeteer.launch({
+        // headless: false,
+        // slowMo: 25 // slow down by 250ms
+    });
 
-  const page = await browser.newPage();
+    const page = await browser.newPage();
 
-  // await page.goto('https://github.com');
-  // await page.screenshot({ path: 'screenshots/github.png' });
+    const USERNAME_SELECTOR = '#input_search';
+    const PASSWORD_SELECTOR = '#password';
+    const BUTTON_SELECTOR = '#buttsearch';
 
-  await page.goto('https://github.com/login');
+    await page.goto('https://www.societe.com/');
+    for (var im = 0; im < 3; im++) {
 
-  // dom element selectors
-  const USERNAME_SELECTOR = '#login_field';
-  const PASSWORD_SELECTOR = '#password';
-  const BUTTON_SELECTOR = '#login > form > div.auth-form-body.mt-3 > input.btn.btn-primary.btn-block';
+        // dom element selectors
+        let pname =places[im].name;
 
-  await page.click(USERNAME_SELECTOR);
-  await page.keyboard.type(CREDS.username);
+        console.log('searching for....->',pname)
 
-  await page.click(PASSWORD_SELECTOR);
-  await page.keyboard.type(CREDS.password);
+            await page.click(USERNAME_SELECTOR);
+        //"AUTO'P DU TOP"
+        await page.keyboard.type(pname);
+        await page.click(BUTTON_SELECTOR);
+        await page.waitForNavigation();
 
-  await page.click(BUTTON_SELECTOR);
-  // await page.waitForNavigation();
+        await page.waitFor(2 * 1000);
+// document.getElementsByClassName("txt-no-underline")[9].href
+        const LIST_USERNAME_SELECTOR = '#search > .monocadre > a:nth-child(INDEX)';
+        const LENGTH_SELECTOR_CLASS = '#search > .monocadre >.txt-no-underline'//'#search > .monocadre >.txt-no-underline';
+        const numPages = 1 //await getNumPages(page);
 
-  const userToSearch = 'aman';
-  const searchUrl = `https://github.com/search?q=${userToSearch}&type=Users&utf8=%E2%9C%93`;
-  // let searchUrl = 'https://github.com/search?utf8=%E2%9C%93&q=bashua&type=Users';
+        for (let h = 1; h <= numPages; h++) {
+            // let pageUrl = searchUrl + '&p=' + h;
+            // await page.goto(pageUrl);
+            console.log(page.url(), '')
 
-  await page.goto(searchUrl);
-  await page.waitFor(2 * 1000);
- 
-    // const LIST_USERNAME_SELECTOR = '#user_search_results > div.user-list > div:nth-child(1) > div.d-flex > div > a';
-  const LIST_USERNAME_SELECTOR = '#user_search_results > div.user-list > div:nth-child(INDEX) > div.d-flex > div > a';
-    // const LIST_EMAIL_SELECTOR = '#user_search_results > div.user-list > div:nth-child(1) > div.d-flex > div > ul > li:nth-child(2) > a';
-  const LIST_EMAIL_SELECTOR = '#user_search_results > div.user-list > div:nth-child(INDEX) > div.d-flex > div > ul > li:nth-child(2) > a';
-  const LENGTH_SELECTOR_CLASS = 'user-list-item';
-  const numPages = await getNumPages(page);
+            let listUrl = await page.evaluate((sel) => {
+                // console.log(sel,'sssssssssssssssssssssssssss')
+                // return document.querySelectorAll('sel').length;
+                return  JSON.stringify(document.querySelectorAll(sel))
+                // return document.getElementsByClassName(sel)
+            }, LENGTH_SELECTOR_CLASS);
+                            console.log('listLength', JSON.parse(listUrl))
 
-  console.log('Numpages: ', numPages);
-  var page1 = await browser.newPage();
+            let listLength=Object.keys(listUrl).length
+            console.log('listLength', JSON.parse(listUrl),listLength,listUrl['0'])
 
-  for (let h = 1; h <= numPages; h++) {
-    let pageUrl = searchUrl + '&p=' + h;
-    await page.goto(pageUrl);
+            for (let i = 0; i <= 3; i = i++) {
+                // change the index to the next child
+                let usernameSelector =listUrl[i].href// LIST_USERNAME_SELECTOR.replace("INDEX", i);
+                // let emailSelector = LIST_EMAIL_SELECTOR.replace("INDEX", i);
 
-    let listLength = await page.evaluate((sel) => {
-      return document.getElementsByClassName(sel).length;
-    }, LENGTH_SELECTOR_CLASS);
+                // console.log('usernameSelector', usernameSelector, i)
+                // let username = await page.evaluate((sel) => {
+                //     return document.querySelector('txt-no-underline').getAttribute('href').replace('/', '');
+                // }, usernameSelector);
 
-    for (let i = 1; i <= listLength; i++) {
-      // change the index to the next child
-      let usernameSelector = LIST_USERNAME_SELECTOR.replace("INDEX", i);
-      let emailSelector = LIST_EMAIL_SELECTOR.replace("INDEX", i);
+                console.log(usernameSelector, ' -> ');
+                if (!usernameSelector){
+                    console.log('skipping......',usernameSelector)
+                    // continue;
+                }
 
-      let username = await page.evaluate((sel) => {
-        return document.querySelector(sel).getAttribute('href').replace('/', '');
-      }, usernameSelector);
-
-      let email = await page.evaluate((sel) => {
-        let element = document.querySelector(sel);
-        return element ? element.innerHTML : null;
-      }, emailSelector);
-
-      // not all users have emails visible
-      if (!email)
-        continue;
-
-      console.log(username, ' -> ', email);
-        // const userToSearch = 'john';
-        var uurl = `https://github.com/${username}`;
-        await page1.goto(uurl);
-        await page1.waitFor(2 * 1000);
-
-      // upsertUser({
-      //   username: username,
-      //   email: email,
-      //   dateCrawled: new Date()
-      // });
+                var uurl = usernameSelector//`https://www.societe.com/${username}`;
+                var page1 = await browser.newPage();
+                await page1.goto(uurl);
+                await page1.waitFor(2 * 1000);
+                let naf = await getNaf(page1);
+                await page1.close()
+                console.log('NAF->>>>>>>>>', naf)
+                
+            }
+        }
     }
-  }
 
-  browser.close();
+    browser.close();
+}
+
+
+async function getNaf(page) {
+
+
+    let nafSelector = '#rensjur > tbody '
+    let naf = await page.evaluate((sel) => {
+        return document.querySelector(sel).innerHTML;
+    }, nafSelector);
+
+    let tr = naf.split('</tr>')
+
+    let result = '';
+    for (var i = 0; i < tr.length; i++) {
+        let td = tr[i].split('</td>');
+        if (td[0].indexOf('NAF') != -1) {
+            result = td[1];
+            i = 100000000000000000000000;
+        }
+    }
+
+    return result.replace('<td>', '').trim();
 }
 
 async function getNumPages(page) {
-  const NUM_USER_SELECTOR = '#js-pjax-container > div > div.col-12.col-md-9.float-left.px-2.pt-3.pt-md-0.codesearch-results > div > div.d-flex.flex-column.flex-md-row.flex-justify-between.border-bottom.pb-3.position-relative > h3';
-  let inner = await page.evaluate((sel) => {
-    let html = document.querySelector(sel).innerHTML;
+    const NUM_USER_SELECTOR = '#js-pjax-container > div > div.col-12.col-md-9.float-left.px-2.pt-3.pt-md-0.codesearch-results > div > div.d-flex.flex-column.flex-md-row.flex-justify-between.border-bottom.pb-3.position-relative > h3';
+    let inner = await page.evaluate((sel) => {
+        let html = document.querySelector(sel).innerHTML;
 
-    // format is: "69,803 users"
-    return html.replace(',', '').replace('users', '').trim();
-  }, NUM_USER_SELECTOR);
+        // format is: "69,803 users"
+        return html.replace(',', '').replace('users', '').trim();
+    }, NUM_USER_SELECTOR);
 
-  const numUsers = parseInt(inner);
+    const numUsers = parseInt(inner);
 
-  console.log('numUsers: ', numUsers);
+    console.log('numUsers: ', numUsers);
 
-  /**
-   * GitHub shows 10 resuls per page, so
-   */
-  return Math.ceil(numUsers / 10);
+    /**
+     * GitHub shows 10 resuls per page, so
+     */
+    return Math.ceil(numUsers / 10);
 }
 
 function upsertUser(userObj) {
-  const DB_URL = 'mongodb://localhost/thal';
+    const DB_URL = 'mongodb://localhost/thal';
 
-  if (mongoose.connection.readyState == 0) {
-    mongoose.connect(DB_URL);
-  }
-
-  // if this email exists, update the entry, don't insert
-  const conditions = { email: userObj.email };
-  const options = { upsert: true, new: true, setDefaultsOnInsert: true };
-
-  User.findOneAndUpdate(conditions, userObj, options, (err, result) => {
-    if (err) {
-      throw err;
+    if (mongoose.connection.readyState == 0) {
+        mongoose.connect(DB_URL);
     }
-  });
+
+    // if this email exists, update the entry, don't insert
+    const conditions = {
+        email: userObj.email
+    };
+    const options = {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true
+    };
+
+    User.findOneAndUpdate(conditions, userObj, options, (err, result) => {
+        if (err) {
+            throw err;
+        }
+    });
 }
 
 run();

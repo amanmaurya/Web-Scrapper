@@ -12,6 +12,8 @@
     "Thal"
   ],
   "dependencies": {
+    "cheerio": "^1.0.0-rc.2",
+    "fs": "0.0.1-security",
     "puppeteer": "git+https://github.com/GoogleChrome/puppeteer.git"
   }
 }
